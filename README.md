@@ -143,4 +143,4 @@ Update `MONGO_URI` and `JWT_SECRET` in `backend/.env`. The frontend does not nee
 
 - The main app source is inside `frontend/src`
 - Auth uses HTTP-only cookies plus a JWT bearer token stored in the browser
-- RFQs, approvals, invoices, reports, and activity feeds are still using mock frontend data until backend routes are added
+- RFQs, approvals, invoices, reports, and activity feeds are still using mock frontend data until backend routes are added.
