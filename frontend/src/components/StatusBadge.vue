@@ -16,6 +16,8 @@ const badgeClass = computed(() => {
     Active: 'border-emerald-200 bg-emerald-50 text-emerald-700',
     Pending: 'border-amber-200 bg-amber-50 text-amber-700',
     Review: 'border-rose-200 bg-rose-50 text-rose-700',
+    Inactive: 'border-slate-200 bg-slate-50 text-slate-700',
+    Blacklisted: 'border-rose-200 bg-rose-50 text-rose-700',
     Open: 'border-sky-200 bg-sky-50 text-sky-700',
     'Awaiting Quotes': 'border-indigo-200 bg-indigo-50 text-indigo-700',
     Evaluation: 'border-violet-200 bg-violet-50 text-violet-700',

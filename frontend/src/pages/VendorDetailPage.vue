@@ -1,9 +1,15 @@
 <template>
-  <div v-if="vendor" class="space-y-6">
+  <div v-if="loading" class="space-y-6">
+    <AppCard title="Vendor profile" subtitle="Loading supplier details">
+      <p class="text-sm text-slate-500">Fetching the latest vendor record from the backend...</p>
+    </AppCard>
+  </div>
+
+  <div v-else-if="vendor" class="space-y-6">
     <PageHeader
       eyebrow="Vendor Profile"
       :title="vendor.name"
-      :description="`${vendor.category} supplier based in ${vendor.location}. Performance score ${vendor.score} with ${vendor.onTimeRate} on-time delivery.`"
+      :description="`${vendor.category} supplier based in ${vendor.location}. Performance score ${vendor.score}.`"
     >
       <template #actions>
         <RouterLink to="/vendors" class="btn-secondary">Back to vendors</RouterLink>
@@ -51,57 +57,73 @@
             <dt class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Last Updated</dt>
             <dd class="mt-2 text-sm font-medium text-slate-900">{{ formatDate(vendor.lastUpdated) }}</dd>
           </div>
+          <div>
+            <dt class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">GST Number</dt>
+            <dd class="mt-2 text-sm font-medium text-slate-900">{{ vendor.gstNumber || 'Not provided' }}</dd>
+          </div>
+          <div>
+            <dt class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Address</dt>
+            <dd class="mt-2 text-sm font-medium text-slate-900">{{ vendor.address || vendor.location }}</dd>
+          </div>
         </dl>
       </AppCard>
 
       <AppCard title="Related RFQs" subtitle="Events currently involving this supplier" flush>
-        <DataTable :columns="rfqColumns" :rows="relatedRfqs" row-key="id">
-          <template #cell-title="{ row }">
-            <RouterLink :to="`/rfqs/${row.id}`" class="font-semibold text-slate-900">{{ row.title }}</RouterLink>
-          </template>
-          <template #cell-status="{ row }">
-            <StatusBadge :label="row.status" />
-          </template>
-          <template #cell-budget="{ row }">
-            {{ formatCurrency(row.budget) }}
-          </template>
-          <template #cell-dueDate="{ row }">
-            {{ formatDate(row.dueDate) }}
-          </template>
-        </DataTable>
+        <div class="px-6 py-8 text-sm text-slate-500">
+          RFQ data is still using mock records and is not yet linked to this backend vendor profile.
+        </div>
       </AppCard>
     </div>
   </div>
 
   <EmptyState
     v-else
-    kicker="Vendor not found"
+    kicker="Vendor unavailable"
     title="This supplier record is unavailable"
-    description="The requested vendor ID does not exist in the mock dataset yet. Choose another vendor from the registry."
+    :description="errorMessage || 'The requested vendor record could not be loaded. Choose another vendor from the registry.'"
   >
     <RouterLink to="/vendors" class="btn-primary">Return to vendor list</RouterLink>
   </EmptyState>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { ref, watch } from 'vue';
 import { RouterLink, useRoute } from 'vue-router';
-import { getVendorById, rfqs } from '@/api/mockData';
+import { fetchVendorById } from '@/api/vendors';
 import AppCard from '@/components/AppCard.vue';
-import DataTable from '@/components/DataTable.vue';
 import EmptyState from '@/components/EmptyState.vue';
 import PageHeader from '@/components/PageHeader.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
+import type { Vendor } from '@/types';
+import { getErrorMessage } from '@/utils/http';
 import { formatCurrency, formatDate } from '@/utils/formatters';
 
 const route = useRoute();
-const vendor = computed(() => getVendorById(String(route.params.id)));
-const relatedRfqs = computed(() => rfqs.filter((rfq) => rfq.vendorIds.includes(String(route.params.id))));
+const vendor = ref<Vendor | null>(null);
+const loading = ref(true);
+const errorMessage = ref('');
 
-const rfqColumns = [
-  { key: 'title', label: 'RFQ' },
-  { key: 'status', label: 'Status' },
-  { key: 'budget', label: 'Budget' },
-  { key: 'dueDate', label: 'Due Date' }
-];
+const loadVendor = async (vendorId: string) => {
+  loading.value = true;
+  errorMessage.value = '';
+
+  try {
+    vendor.value = await fetchVendorById(vendorId);
+  } catch (error) {
+    vendor.value = null;
+    errorMessage.value = getErrorMessage(error, 'Unable to load this vendor.');
+  } finally {
+    loading.value = false;
+  }
+};
+
+watch(
+  () => String(route.params.id),
+  (vendorId) => {
+    if (vendorId) {
+      loadVendor(vendorId);
+    }
+  },
+  { immediate: true }
+);
 </script>

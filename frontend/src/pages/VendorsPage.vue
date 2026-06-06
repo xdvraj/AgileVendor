@@ -18,7 +18,7 @@
           <p class="mt-2 text-2xl font-semibold text-slate-950">{{ activeVendors }}</p>
         </div>
         <div>
-          <p class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Pending Review</p>
+          <p class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Needs Attention</p>
           <p class="mt-2 text-2xl font-semibold text-slate-950">{{ pendingVendors }}</p>
         </div>
         <div>
@@ -27,7 +27,10 @@
         </div>
       </div>
 
-      <DataTable :columns="columns" :rows="vendors" row-key="id">
+      <div v-if="loading" class="px-6 py-8 text-sm text-slate-500">Loading vendors from the backend...</div>
+      <div v-else-if="errorMessage" class="px-6 py-8 text-sm text-rose-600">{{ errorMessage }}</div>
+      <div v-else-if="!vendors.length" class="px-6 py-8 text-sm text-slate-500">No vendors found yet.</div>
+      <DataTable v-else :columns="columns" :rows="vendors" row-key="id">
         <template #cell-name="{ row }">
           <div>
             <RouterLink :to="`/vendors/${row.id}`" class="font-semibold text-slate-900">{{ row.name }}</RouterLink>
@@ -49,14 +52,20 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { RouterLink } from 'vue-router';
-import { vendors } from '@/api/mockData';
+import { fetchVendors } from '@/api/vendors';
 import AppCard from '@/components/AppCard.vue';
 import DataTable from '@/components/DataTable.vue';
 import PageHeader from '@/components/PageHeader.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
+import type { Vendor } from '@/types';
+import { getErrorMessage } from '@/utils/http';
 import { formatCurrency } from '@/utils/formatters';
+
+const vendors = ref<Vendor[]>([]);
+const loading = ref(true);
+const errorMessage = ref('');
 
 const columns = [
   { key: 'name', label: 'Vendor' },
@@ -68,7 +77,22 @@ const columns = [
   { key: 'totalSpend', label: 'Spend' }
 ];
 
-const activeVendors = computed(() => vendors.filter((vendor) => vendor.status === 'Active').length);
-const pendingVendors = computed(() => vendors.filter((vendor) => vendor.status !== 'Active').length);
-const totalSpend = computed(() => vendors.reduce((sum, vendor) => sum + vendor.totalSpend, 0));
+const activeVendors = computed(() => vendors.value.filter((vendor) => vendor.status === 'Active').length);
+const pendingVendors = computed(() => vendors.value.filter((vendor) => vendor.status !== 'Active').length);
+const totalSpend = computed(() => vendors.value.reduce((sum, vendor) => sum + vendor.totalSpend, 0));
+
+const loadVendors = async () => {
+  loading.value = true;
+  errorMessage.value = '';
+
+  try {
+    vendors.value = await fetchVendors();
+  } catch (error) {
+    errorMessage.value = getErrorMessage(error, 'Unable to load vendors.');
+  } finally {
+    loading.value = false;
+  }
+};
+
+onMounted(loadVendors);
 </script>

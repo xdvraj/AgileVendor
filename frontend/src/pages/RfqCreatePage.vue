@@ -47,7 +47,10 @@
 
       <div class="space-y-6">
         <AppCard title="Invite vendors" subtitle="Suggested supplier pool for this event">
-          <div class="divide-y divide-slate-200">
+          <p v-if="loadingVendors" class="text-sm text-slate-500">Loading vendors from the backend...</p>
+          <p v-else-if="vendorError" class="text-sm text-rose-600">{{ vendorError }}</p>
+          <p v-else-if="!vendors.length" class="text-sm text-slate-500">No vendors available yet. Create one first.</p>
+          <div v-else class="divide-y divide-slate-200">
             <label v-for="vendor in vendors" :key="vendor.id" class="flex items-start gap-3 py-3 first:pt-0 last:pb-0">
               <input type="checkbox" class="mt-1 rounded border-slate-300 text-brand-600" />
               <div>
@@ -71,8 +74,25 @@
 </template>
 
 <script setup lang="ts">
+import { onMounted, ref } from 'vue';
 import { RouterLink } from 'vue-router';
-import { vendors } from '@/api/mockData';
+import { fetchVendors } from '@/api/vendors';
 import AppCard from '@/components/AppCard.vue';
 import PageHeader from '@/components/PageHeader.vue';
+import type { Vendor } from '@/types';
+import { getErrorMessage } from '@/utils/http';
+
+const vendors = ref<Vendor[]>([]);
+const loadingVendors = ref(true);
+const vendorError = ref('');
+
+onMounted(async () => {
+  try {
+    vendors.value = await fetchVendors();
+  } catch (error) {
+    vendorError.value = getErrorMessage(error, 'Unable to load vendors.');
+  } finally {
+    loadingVendors.value = false;
+  }
+});
 </script>

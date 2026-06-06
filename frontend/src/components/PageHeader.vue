@@ -10,15 +10,25 @@
       </p>
     </div>
     <div class="flex flex-wrap gap-3">
+      <RouterLink v-if="actionLabel && actionTo" :to="actionTo" class="btn-primary">
+        {{ actionLabel }}
+      </RouterLink>
+      <button v-else-if="actionLabel" type="button" class="btn-primary">
+        {{ actionLabel }}
+      </button>
       <slot name="actions" />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { RouterLink } from 'vue-router';
+
 defineProps<{
   eyebrow?: string;
   title: string;
   description?: string;
+  actionLabel?: string;
+  actionTo?: string;
 }>();
 </script>

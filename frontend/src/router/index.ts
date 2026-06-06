@@ -1,4 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
+import { authRoutes } from '@/config/auth';
+import { authState, ensureAuthLoaded } from '@/state/auth';
 
 const router = createRouter({
   history: createWebHistory(),
@@ -15,19 +17,26 @@ const router = createRouter({
           path: 'login',
           name: 'login',
           component: () => import('@/pages/LoginPage.vue'),
-          meta: { title: 'Sign In' }
+          meta: { title: 'Sign In', guestOnly: true }
         },
         {
           path: 'signup',
           name: 'signup',
           component: () => import('@/pages/SignupPage.vue'),
-          meta: { title: 'Create Account' }
+          meta: { title: 'Create Account', guestOnly: true }
+        },
+        {
+          path: 'forgot-password',
+          name: 'forgot-password',
+          component: () => import('@/pages/ForgotPasswordPage.vue'),
+          meta: { title: 'Reset Password', guestOnly: true }
         }
       ]
     },
     {
       path: '/',
-      component: () => import('@/layouts/MainLayout.vue'),
+      component: () => import('@/layouts/AppLayout.vue'),
+      meta: { requiresAuth: true },
       children: [
         {
           path: 'dashboard',
@@ -118,6 +127,18 @@ const router = createRouter({
   ],
   scrollBehavior() {
     return { top: 0 };
+  }
+});
+
+router.beforeEach(async (to) => {
+  await ensureAuthLoaded();
+
+  if (to.meta.requiresAuth && !authState.user) {
+    return authRoutes.login;
+  }
+
+  if (to.meta.guestOnly && authState.user) {
+    return authRoutes.dashboard;
   }
 });
 

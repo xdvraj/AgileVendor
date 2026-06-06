@@ -2,14 +2,26 @@ export type NavItem = {
   label: string;
   to: string;
   icon: string;
+  exact?: boolean;
 };
 
-export type VendorStatus = 'Active' | 'Pending' | 'Review';
+export type VendorStatus = 'Active' | 'Pending' | 'Review' | 'Inactive' | 'Blacklisted';
 export type RfqStatus = 'Open' | 'Awaiting Quotes' | 'Evaluation' | 'Awarded';
 export type ApprovalPriority = 'Low' | 'Medium' | 'High';
 export type ApprovalStatus = 'Queued' | 'In Review' | 'Approved';
 export type InvoiceStatus = 'Current' | 'Due Soon' | 'Overdue' | 'Paid';
 export type PurchaseOrderStatus = 'Draft' | 'Released' | 'Partially Received' | 'Completed';
+export type BackendUserRole = 'admin' | 'procurement_officer' | 'vendor' | 'approver';
+export type UserRole = 'Admin' | 'Procurement Officer' | 'Vendor' | 'Approver';
+export type BackendVendorStatus = 'active' | 'inactive' | 'blacklisted';
+
+export type AuthUser = {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  backendRole: BackendUserRole;
+};
 
 export type Vendor = {
   id: string;
@@ -25,6 +37,10 @@ export type Vendor = {
   totalSpend: number;
   pendingRfqs: number;
   lastUpdated: string;
+  gstNumber?: string;
+  rating?: number;
+  address?: string;
+  backendStatus?: BackendVendorStatus;
 };
 
 export type Rfq = {
