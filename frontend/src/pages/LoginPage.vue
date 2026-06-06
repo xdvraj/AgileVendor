@@ -3,10 +3,22 @@
     <p class="text-xs font-semibold uppercase tracking-[0.18em] text-brand-700">Welcome back</p>
     <h2 class="mt-3 text-2xl font-semibold text-slate-950">Sign in to VendorBridge</h2>
     <p class="mt-2 text-sm leading-6 text-slate-600">
-      Sign in with your backend account to enter the ERP workspace.
+      Choose your workspace role, then sign in with your backend account to enter the ERP workspace.
     </p>
 
     <form class="mt-8 space-y-5" @submit.prevent="submitLogin">
+      <div>
+        <label class="mb-2 block text-sm font-medium text-slate-700">Role</label>
+        <select v-model="form.role" class="field">
+          <option value="">Select role</option>
+          <option v-for="role in authRoles" :key="role" :value="role">{{ role }}</option>
+        </select>
+        <p v-if="errors.role" class="mt-2 text-sm text-rose-600">{{ errors.role }}</p>
+        <p v-else class="mt-2 text-xs leading-5 text-slate-500">
+          Your selected role must match the role assigned to this account.
+        </p>
+      </div>
+
       <div>
         <label class="mb-2 block text-sm font-medium text-slate-700">Email</label>
         <input
@@ -51,7 +63,7 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue';
 import { RouterLink, useRouter } from 'vue-router';
-import { authMessages, authPlaceholders, authRoutes, authValidation } from '@/config/auth';
+import { authMessages, authPlaceholders, authRoles, authRoutes, authValidation, type AuthRole } from '@/config/auth';
 import { login } from '@/state/auth';
 import { getErrorMessage } from '@/utils/http';
 
@@ -59,20 +71,27 @@ const router = useRouter();
 const submitting = ref(false);
 
 const form = reactive({
+  role: '' as '' | AuthRole,
   email: '',
   password: ''
 });
 
 const errors = reactive({
+  role: '',
   email: '',
   password: '',
   form: ''
 });
 
 const validate = () => {
+  errors.role = '';
   errors.email = '';
   errors.password = '';
   errors.form = '';
+
+  if (!form.role) {
+    errors.role = 'Please select a role.';
+  }
 
   if (!form.email) {
     errors.email = 'Email is required.';
@@ -86,7 +105,7 @@ const validate = () => {
     errors.password = `Password must be at least ${authValidation.minPasswordLength} characters.`;
   }
 
-  return !errors.email && !errors.password;
+  return !errors.role && !errors.email && !errors.password;
 };
 
 const submitLogin = async () => {
@@ -98,7 +117,13 @@ const submitLogin = async () => {
   submitting.value = true;
 
   try {
+    if (!form.role) {
+      errors.form = 'Please select a role.';
+      return;
+    }
+
     await login({
+      role: form.role,
       email: form.email,
       password: form.password
     });

@@ -6,7 +6,18 @@ export type NavItem = {
 };
 
 export type VendorStatus = 'Active' | 'Pending' | 'Review' | 'Inactive' | 'Blacklisted';
-export type RfqStatus = 'Open' | 'Awaiting Quotes' | 'Evaluation' | 'Awarded';
+export type RfqStatus =
+  | 'Draft'
+  | 'Open'
+  | 'Awaiting Quotes'
+  | 'Evaluation'
+  | 'Awarded'
+  | 'Closed'
+  | 'Under Review'
+  | 'Approval Pending'
+  | 'Approved'
+  | 'Rejected'
+  | 'PO Created';
 export type ApprovalPriority = 'Low' | 'Medium' | 'High';
 export type ApprovalStatus = 'Queued' | 'In Review' | 'Approved';
 export type InvoiceStatus = 'Current' | 'Due Soon' | 'Overdue' | 'Paid';
@@ -45,6 +56,7 @@ export type Vendor = {
 
 export type Rfq = {
   id: string;
+  backendId?: string;
   title: string;
   category: string;
   issueDate: string;
@@ -54,6 +66,8 @@ export type Rfq = {
   requester: string;
   vendorIds: string[];
   itemCount: number;
+  description?: string;
+  assignedVendorDetails?: Vendor[];
 };
 
 export type RfqQuote = {

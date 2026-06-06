@@ -26,10 +26,17 @@ const mapAuthUser = (user: BackendAuthUser): AuthUser => ({
   backendRole: user.role
 });
 
-export const login = async (payload: { email: string; password: string }) => {
+export const login = async (payload: { email: string; password: string; role?: AuthRole }) => {
   const response = await apiClient.post<AuthResponse>('/auth/login', payload);
   setAuthToken(response.data.data.token ?? null);
-  return mapAuthUser(response.data.data.user);
+  const user = mapAuthUser(response.data.data.user);
+
+  if (payload.role && user.role !== payload.role) {
+    setAuthToken(null);
+    throw new Error(`This account is registered as ${user.role}. Please choose the correct role to continue.`);
+  }
+
+  return user;
 };
 
 export const signup = async (payload: {

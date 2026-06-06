@@ -10,53 +10,44 @@
         >
           <Icon icon="solar:hamburger-menu-outline" class="h-5 w-5" />
         </button>
-
-        <img
-          src="@/assets/agile-vendor-symbol.png"
-          alt="Agile Vendor symbol"
-          class="hidden h-11 w-auto max-w-[140px] object-contain sm:block"
-        />
       </div>
 
-      <div ref="menuRef" class="relative">
-        <button
-          class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-left transition hover:border-slate-300 hover:bg-slate-50"
-          type="button"
-          aria-label="Open profile menu"
-          @click="toggleMenu"
-        >
-          <div class="flex h-10 w-10 items-center justify-center rounded-full bg-brand-700 text-sm font-semibold text-white">
-            {{ initials }}
-          </div>
+      <div class="flex items-center gap-3">
+        <img
+          src="@/assets/agile-vendor-logo.png"
+          alt="Agile Vendor logo"
+          class="hidden h-30 w-auto max-w-[220px] object-contain sm:block"
+        />
 
-          <div class="hidden min-w-0 sm:block">
-            <p class="truncate text-sm font-medium text-slate-900">{{ userName }}</p>
-            <p class="mt-0.5 truncate text-xs text-slate-500">{{ userRole }}</p>
-          </div>
-
-          <Icon
-            icon="solar:alt-arrow-down-outline"
-            class="h-4 w-4 text-slate-500 transition"
-            :class="{ 'rotate-180': isMenuOpen }"
-          />
-        </button>
-
-        <div
-          v-if="isMenuOpen"
-          class="absolute right-0 z-20 mt-3 w-56 rounded-2xl border border-slate-200 bg-white p-2 shadow-[0_20px_60px_rgba(15,23,42,0.12)]"
-        >
-          <div class="rounded-xl bg-slate-50 px-3 py-3">
-            <p class="truncate text-sm font-semibold text-slate-900">{{ userName }}</p>
-            <p class="mt-1 truncate text-xs text-slate-500">{{ userRole }}</p>
-          </div>
-
+        <div ref="profileRef" class="relative">
           <button
-            class="mt-2 flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-medium text-rose-600 transition hover:bg-rose-50"
+            class="flex h-10 w-10 items-center justify-center rounded-full bg-brand-700 text-white transition hover:bg-brand-800"
             type="button"
-            @click="handleLogout"
+            aria-label="Open profile details"
+            @click="toggleProfile"
           >
-            <span>Logout</span>
+            <Icon icon="solar:user-bold-duotone" class="h-5 w-5" />
+          </button>
+
+          <div
+            v-if="isProfileOpen"
+            class="absolute right-0 z-20 mt-3 w-56 rounded-2xl border border-slate-200 bg-white p-2 shadow-[0_20px_60px_rgba(15,23,42,0.12)]"
+          >
+            <div class="rounded-xl bg-slate-50 px-3 py-3">
+              <p class="truncate text-sm font-semibold text-slate-900">{{ userName }}</p>
+              <p class="mt-1 truncate text-xs text-slate-500">{{ userRole }}</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center rounded-2xl bg-white px-1 py-1">
+          <button
+            class="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-rose-600 transition hover:bg-rose-50"
+            type="button"
+            @click="$emit('logout')"
+          >
             <Icon icon="solar:logout-2-outline" class="h-4 w-4" />
+            <span class="hidden sm:inline">Logout</span>
           </button>
         </div>
       </div>
@@ -65,48 +56,34 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { onBeforeUnmount, onMounted, ref } from 'vue';
 import { Icon } from '@iconify/vue';
 
-const props = defineProps<{
+defineProps<{
   userName: string;
   userRole: string;
 }>();
 
-const emit = defineEmits<{
+defineEmits<{
   toggleSidebar: [];
   logout: [];
 }>();
 
-const isMenuOpen = ref(false);
-const menuRef = ref<HTMLElement | null>(null);
+const isProfileOpen = ref(false);
+const profileRef = ref<HTMLElement | null>(null);
 
-const initials = computed(() =>
-  props.userName
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? '')
-    .join('') || 'U'
-);
-
-const toggleMenu = () => {
-  isMenuOpen.value = !isMenuOpen.value;
-};
-
-const handleLogout = () => {
-  isMenuOpen.value = false;
-  emit('logout');
+const toggleProfile = () => {
+  isProfileOpen.value = !isProfileOpen.value;
 };
 
 const handleDocumentClick = (event: MouseEvent) => {
-  if (!menuRef.value) {
+  if (!profileRef.value) {
     return;
   }
 
   const target = event.target;
-  if (target instanceof Node && !menuRef.value.contains(target)) {
-    isMenuOpen.value = false;
+  if (target instanceof Node && !profileRef.value.contains(target)) {
+    isProfileOpen.value = false;
   }
 };
 

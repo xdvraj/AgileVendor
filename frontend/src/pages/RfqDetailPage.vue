@@ -7,7 +7,7 @@
     >
       <template #actions>
         <RouterLink to="/rfqs" class="btn-secondary">Back to RFQs</RouterLink>
-        <RouterLink :to="`/rfqs/${rfq.id}/compare`" class="btn-primary">Compare quotes</RouterLink>
+        <RouterLink :to="`/rfqs/${routeRfqId}/compare`" class="btn-primary">Compare quotes</RouterLink>
       </template>
     </PageHeader>
 
@@ -36,7 +36,7 @@
       <AppCard title="Vendor participation" subtitle="Suppliers currently attached to this event" flush>
         <DataTable :columns="vendorColumns" :rows="invitedVendors" row-key="id">
           <template #cell-name="{ row }">
-            <RouterLink :to="`/vendors/${row.id}`" class="font-semibold text-slate-900">{{ row.name }}</RouterLink>
+            <RouterLink :to="`/vendors/${row.backendId ?? row.id}`" class="font-semibold text-slate-900">{{ row.name }}</RouterLink>
           </template>
           <template #cell-status="{ row }">
             <StatusBadge :label="row.status" />
@@ -56,31 +56,46 @@
   </div>
 
   <EmptyState
-    v-else
+    v-else-if="!loading"
     kicker="RFQ not found"
     title="This sourcing event is unavailable"
     description="The requested RFQ ID is not present in the mock data. Return to the RFQ list to continue."
   >
     <RouterLink to="/rfqs" class="btn-primary">Return to RFQ list</RouterLink>
   </EmptyState>
+
+  <div v-else class="space-y-6">
+    <PageHeader
+      eyebrow="RFQ Detail"
+      title="Loading RFQ"
+      description="Fetching the sourcing event details."
+    />
+  </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { RouterLink, useRoute } from 'vue-router';
+import { fetchRfqById } from '@/api/rfqs';
 import { getRfqById, rfqQuotes, vendors } from '@/api/mockData';
 import AppCard from '@/components/AppCard.vue';
 import DataTable from '@/components/DataTable.vue';
 import EmptyState from '@/components/EmptyState.vue';
 import PageHeader from '@/components/PageHeader.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
+import type { Rfq } from '@/types';
 import { formatCurrency, formatDate } from '@/utils/formatters';
 
 const route = useRoute();
-const rfq = computed(() => getRfqById(String(route.params.id)));
+const routeRfqId = String(route.params.id);
+const backendRfq = ref<Rfq | null>(null);
+const loading = ref(true);
+const rfq = computed(() => backendRfq.value ?? getRfqById(routeRfqId));
 const quotes = computed(() => (rfq.value ? rfqQuotes[rfq.value.id] ?? [] : []));
 const invitedVendors = computed(() =>
-  vendors.filter((vendor) => rfq.value?.vendorIds.includes(vendor.id))
+  rfq.value?.assignedVendorDetails?.length
+    ? rfq.value.assignedVendorDetails
+    : vendors.filter((vendor) => rfq.value?.vendorIds.includes(vendor.id))
 );
 
 const vendorColumns = [
@@ -99,4 +114,19 @@ const quoteColumns = [
 ];
 
 const vendorName = (vendorId: string) => vendors.find((vendor) => vendor.id === vendorId)?.name ?? vendorId;
+
+onMounted(async () => {
+  if (getRfqById(routeRfqId)) {
+    loading.value = false;
+    return;
+  }
+
+  try {
+    backendRfq.value = await fetchRfqById(routeRfqId);
+  } catch {
+    backendRfq.value = null;
+  } finally {
+    loading.value = false;
+  }
+});
 </script>

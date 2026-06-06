@@ -11,6 +11,8 @@
           @logout="handleLogout"
         />
 
+        <Breadcrumbs />
+
         <main class="px-4 py-6 sm:px-6 lg:px-8">
           <RouterView />
         </main>
@@ -22,6 +24,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { RouterView, useRouter } from 'vue-router';
+import Breadcrumbs from '@/components/Breadcrumbs.vue';
 import Sidebar from '@/components/Sidebar.vue';
 import Topbar from '@/components/Topbar.vue';
 import { logout, authState } from '@/state/auth';

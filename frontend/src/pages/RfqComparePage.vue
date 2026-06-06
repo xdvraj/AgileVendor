@@ -6,7 +6,7 @@
       description="Review price, lead time, score, and payment terms side by side before awarding the event."
     >
       <template #actions>
-        <RouterLink :to="`/rfqs/${rfq.id}`" class="btn-secondary">Back to RFQ</RouterLink>
+        <RouterLink :to="`/rfqs/${routeRfqId}`" class="btn-secondary">Back to RFQ</RouterLink>
         <button class="btn-primary">Recommend award</button>
       </template>
     </PageHeader>
@@ -45,27 +45,40 @@
   </div>
 
   <EmptyState
-    v-else
+    v-else-if="!loading"
     kicker="Comparison unavailable"
     title="There is no RFQ to compare here"
     description="The quote comparison view needs a valid RFQ ID from the mock dataset."
   >
     <RouterLink to="/rfqs" class="btn-primary">Return to RFQs</RouterLink>
   </EmptyState>
+
+  <div v-else class="space-y-6">
+    <PageHeader
+      eyebrow="Bid Comparison"
+      title="Loading comparison"
+      description="Fetching RFQ details for comparison."
+    />
+  </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { RouterLink, useRoute } from 'vue-router';
+import { fetchRfqById } from '@/api/rfqs';
 import { getRfqById, rfqQuotes, vendors } from '@/api/mockData';
 import AppCard from '@/components/AppCard.vue';
 import DataTable from '@/components/DataTable.vue';
 import EmptyState from '@/components/EmptyState.vue';
 import PageHeader from '@/components/PageHeader.vue';
+import type { Rfq } from '@/types';
 import { formatCurrency } from '@/utils/formatters';
 
 const route = useRoute();
-const rfq = computed(() => getRfqById(String(route.params.id)));
+const routeRfqId = String(route.params.id);
+const backendRfq = ref<Rfq | null>(null);
+const loading = ref(true);
+const rfq = computed(() => backendRfq.value ?? getRfqById(routeRfqId));
 const comparisonRows = computed(() => (rfq.value ? rfqQuotes[rfq.value.id] ?? [] : []));
 
 const columns = [
@@ -91,4 +104,19 @@ const fastestLead = computed(() =>
 );
 
 const vendorName = (vendorId: string) => vendors.find((vendor) => vendor.id === vendorId)?.name ?? vendorId;
+
+onMounted(async () => {
+  if (getRfqById(routeRfqId)) {
+    loading.value = false;
+    return;
+  }
+
+  try {
+    backendRfq.value = await fetchRfqById(routeRfqId);
+  } catch {
+    backendRfq.value = null;
+  } finally {
+    loading.value = false;
+  }
+});
 </script>

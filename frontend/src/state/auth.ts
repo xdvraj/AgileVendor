@@ -74,7 +74,7 @@ export const ensureAuthLoaded = async () => {
   return hydrationPromise;
 };
 
-export const login = async (payload: { email: string; password: string }) => {
+export const login = async (payload: { email: string; password: string; role?: AuthRole }) => {
   const user = await loginRequest(payload);
   authState.initialized = true;
   setUser(user);
