@@ -6,6 +6,7 @@ const env = require("./config/env");
 const authRoutes = require("./routes/auth");
 const vendorRoutes = require("./routes/vendor");
 const rfqRoutes = require("./routes/rfq");
+const quotationRoutes = require("./routes/quotation");
 
 const app = express();
 
@@ -29,7 +30,11 @@ const apiRoutes = [
   { method: "PATCH",path: "/api/rfqs/:id",         auth: true, description: "Update RFQ" },
   { method: "DELETE",path: "/api/rfqs/:id",        auth: true, description: "Delete RFQ" },
   { method: "POST", path: "/api/rfqs/:id/assign-vendors", auth: true, description: "Assign vendors to RFQ" },
-  { method: "GET",  path: "/api/health",           auth: false, description: "Server health check" },
+  { method: "GET",  path: "/api/vendor/rfqs",          auth: true, description: "Vendor browse open RFQs" },
+  { method: "GET",  path: "/api/rfqs/:rfqId/quotations",  auth: true, description: "Get quotations for RFQ" },
+  { method: "POST", path: "/api/rfqs/:rfqId/quotations",  auth: true, description: "Vendor submit quotation" },
+  { method: "PATCH",path: "/api/quotations/:id",          auth: true, description: "Vendor edit quotation" },
+  { method: "GET",  path: "/api/health",                  auth: false, description: "Server health check" },
 ];
 
 app.get("/api/health", async (_req, res) => {
@@ -50,6 +55,7 @@ app.get("/api/health", async (_req, res) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/vendors", vendorRoutes);
+app.use("/api", quotationRoutes);
 app.use("/api/rfqs", rfqRoutes);
 
 app.all("*", (_req, res) => {
