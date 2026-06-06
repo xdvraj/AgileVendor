@@ -9,6 +9,7 @@ const rfqRoutes = require("./routes/rfq");
 const quotationRoutes = require("./routes/quotation");
 const approvalRoutes = require("./routes/approval");
 const purchaseOrderRoutes = require("./routes/purchaseOrder");
+const invoiceRoutes = require("./routes/invoice");
 
 const app = express();
 
@@ -46,6 +47,11 @@ const apiRoutes = [
   { method: "POST", path: "/api/purchase-orders",             auth: true, description: "Create PO from selected quotation" },
   { method: "GET",  path: "/api/purchase-orders/:id",         auth: true, description: "Get PO by ID" },
   { method: "POST", path: "/api/purchase-orders/:id/send",    auth: true, description: "Send PO to vendor" },
+  { method: "GET",  path: "/api/invoices",                    auth: true, description: "List invoices" },
+  { method: "POST", path: "/api/invoices",                    auth: true, description: "Generate invoice from PO" },
+  { method: "GET",  path: "/api/invoices/:id",                auth: true, description: "Get invoice by ID" },
+  { method: "GET",  path: "/api/invoices/:id/download",       auth: true, description: "Download invoice data" },
+  { method: "POST", path: "/api/invoices/:id/email",          auth: true, description: "Send invoice to vendor" },
   { method: "GET",  path: "/api/health",                      auth: false, description: "Server health check" },
 ];
 
@@ -71,6 +77,7 @@ app.use("/api", quotationRoutes);
 app.use("/api/rfqs", rfqRoutes);
 app.use("/api/approvals", approvalRoutes);
 app.use("/api/purchase-orders", purchaseOrderRoutes);
+app.use("/api/invoices", invoiceRoutes);
 
 app.all("*", (_req, res) => {
   res.status(404).json({ success: false, message: "Route not found." });
