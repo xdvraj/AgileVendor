@@ -1,6 +1,8 @@
 const Rfq = require("../models/Rfq");
 const Quotation = require("../models/Quotation");
 const Approval = require("../models/Approval");
+const Vendor = require("../models/Vendor");
+const PurchaseOrder = require("../models/PurchaseOrder");
 const catchAsync = require("../utils/catchAsync");
 const AppError = require("../utils/AppError");
 
@@ -89,6 +91,36 @@ const approve = catchAsync(async (req, res) => {
 
   await Rfq.findByIdAndUpdate(approval.rfq, { status: "APPROVED" });
   await Quotation.findByIdAndUpdate(approval.quotation, { status: "SELECTED" });
+
+  const quotation = await Quotation.findById(approval.quotation).populate("createdBy", "name email");
+  if (quotation) {
+    const vendor = await Vendor.findOne({ email: quotation.createdBy.email.toLowerCase() });
+    const vendorData = vendor
+      ? {
+          companyName: vendor.companyName,
+          contactPerson: vendor.contactPerson,
+          email: vendor.email,
+          phone: vendor.phone,
+          gstNumber: vendor.gstNumber,
+          address: vendor.address,
+        }
+      : { companyName: quotation.createdBy.name, email: quotation.createdBy.email };
+
+    await PurchaseOrder.create({
+      rfq: approval.rfq,
+      quotation: approval.quotation,
+      vendor: vendorData,
+      items: quotation.items,
+      price: quotation.price,
+      tax: quotation.tax,
+      totalAmount: quotation.totalAmount,
+      deliveryTimeline: quotation.deliveryTimeline,
+      notes: quotation.notes,
+      createdBy: req.user.userId,
+    });
+
+    await Rfq.findByIdAndUpdate(approval.rfq, { status: "PO_CREATED" });
+  }
 
   const populated = await approval
     .populate("rfq", "rfqNumber title status")

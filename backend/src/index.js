@@ -8,6 +8,7 @@ const vendorRoutes = require("./routes/vendor");
 const rfqRoutes = require("./routes/rfq");
 const quotationRoutes = require("./routes/quotation");
 const approvalRoutes = require("./routes/approval");
+const purchaseOrderRoutes = require("./routes/purchaseOrder");
 
 const app = express();
 
@@ -41,7 +42,11 @@ const apiRoutes = [
   { method: "POST", path: "/api/approvals",                  auth: true, description: "Create approval request" },
   { method: "POST", path: "/api/approvals/:id/approve",      auth: true, description: "Approve request" },
   { method: "POST", path: "/api/approvals/:id/reject",       auth: true, description: "Reject request" },
-  { method: "GET",  path: "/api/health",                     auth: false, description: "Server health check" },
+  { method: "GET",  path: "/api/purchase-orders",             auth: true, description: "List purchase orders" },
+  { method: "POST", path: "/api/purchase-orders",             auth: true, description: "Create PO from selected quotation" },
+  { method: "GET",  path: "/api/purchase-orders/:id",         auth: true, description: "Get PO by ID" },
+  { method: "POST", path: "/api/purchase-orders/:id/send",    auth: true, description: "Send PO to vendor" },
+  { method: "GET",  path: "/api/health",                      auth: false, description: "Server health check" },
 ];
 
 app.get("/api/health", async (_req, res) => {
@@ -65,6 +70,7 @@ app.use("/api/vendors", vendorRoutes);
 app.use("/api", quotationRoutes);
 app.use("/api/rfqs", rfqRoutes);
 app.use("/api/approvals", approvalRoutes);
+app.use("/api/purchase-orders", purchaseOrderRoutes);
 
 app.all("*", (_req, res) => {
   res.status(404).json({ success: false, message: "Route not found." });
