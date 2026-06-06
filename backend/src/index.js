@@ -5,6 +5,7 @@ const connectDB = require("./config/db");
 const env = require("./config/env");
 const authRoutes = require("./routes/auth");
 const vendorRoutes = require("./routes/vendor");
+const rfqRoutes = require("./routes/rfq");
 
 const app = express();
 
@@ -22,7 +23,13 @@ const apiRoutes = [
   { method: "GET",  path: "/api/vendors/:id",     auth: true, description: "Get vendor by ID" },
   { method: "PATCH",path: "/api/vendors/:id",     auth: true, description: "Update vendor" },
   { method: "DELETE",path: "/api/vendors/:id",    auth: true, description: "Delete vendor" },
-  { method: "GET",  path: "/api/health",          auth: false, description: "Server health check" },
+  { method: "GET",  path: "/api/rfqs",             auth: true, description: "List / search RFQs" },
+  { method: "POST", path: "/api/rfqs",             auth: true, description: "Create an RFQ" },
+  { method: "GET",  path: "/api/rfqs/:id",         auth: true, description: "Get RFQ by ID" },
+  { method: "PATCH",path: "/api/rfqs/:id",         auth: true, description: "Update RFQ" },
+  { method: "DELETE",path: "/api/rfqs/:id",        auth: true, description: "Delete RFQ" },
+  { method: "POST", path: "/api/rfqs/:id/assign-vendors", auth: true, description: "Assign vendors to RFQ" },
+  { method: "GET",  path: "/api/health",           auth: false, description: "Server health check" },
 ];
 
 app.get("/api/health", async (_req, res) => {
@@ -43,6 +50,7 @@ app.get("/api/health", async (_req, res) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/vendors", vendorRoutes);
+app.use("/api/rfqs", rfqRoutes);
 
 app.all("*", (_req, res) => {
   res.status(404).json({ success: false, message: "Route not found." });
