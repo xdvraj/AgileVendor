@@ -2,6 +2,7 @@ const PurchaseOrder = require("../models/PurchaseOrder");
 const Invoice = require("../models/Invoice");
 const catchAsync = require("../utils/catchAsync");
 const AppError = require("../utils/AppError");
+const { logActivity, notifyAdmins } = require("../utils/logger");
 
 const getAll = catchAsync(async (req, res) => {
   const { status, search, sortBy, order } = req.query;
@@ -81,6 +82,17 @@ const create = catchAsync(async (req, res) => {
     .populate("rfq", "rfqNumber title")
     .populate("createdBy", "name email");
 
+  await logActivity({
+    action: "Invoice generated", entity: "Invoice", entityId: invoice._id,
+    description: `Invoice ${invoice.invoiceNumber} generated from PO ${po.poNumber}`,
+    performedBy: req.user.userId, metadata: { totalAmount: invoice.totalAmount },
+  });
+  await notifyAdmins({
+    title: "Invoice Generated", message: `Invoice ${invoice.invoiceNumber} has been created.`,
+    type: "success", link: `/invoices/${invoice._id}`,
+    relatedTo: { entity: "Invoice", entityId: invoice._id },
+  });
+
   res.status(201).json({ success: true, message: "Invoice generated.", data: populated });
 });
 
@@ -136,6 +148,12 @@ const email = catchAsync(async (req, res) => {
     .populate("po", "poNumber")
     .populate("rfq", "rfqNumber title")
     .populate("createdBy", "name email");
+
+  await logActivity({
+    action: "Invoice emailed", entity: "Invoice", entityId: invoice._id,
+    description: `Invoice ${invoice.invoiceNumber} sent to ${invoice.vendor.email}`,
+    performedBy: req.user.userId,
+  });
 
   res.json({
     success: true,

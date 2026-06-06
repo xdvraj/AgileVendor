@@ -1,6 +1,7 @@
 const Vendor = require("../models/Vendor");
 const catchAsync = require("../utils/catchAsync");
 const AppError = require("../utils/AppError");
+const { logActivity, notifyAdmins } = require("../utils/logger");
 
 const getAll = catchAsync(async (req, res) => {
   const { search, category, status, sortBy, order } = req.query;
@@ -47,6 +48,17 @@ const create = catchAsync(async (req, res) => {
     companyName, contactPerson, email, phone, gstNumber, category, address, status, rating,
   });
 
+  await logActivity({
+    action: "Vendor created", entity: "Vendor", entityId: vendor._id,
+    description: `Vendor ${companyName} created`,
+    performedBy: req.user.userId, metadata: { email },
+  });
+  await notifyAdmins({
+    title: "New Vendor Added", message: `${companyName} has been registered as a vendor.`,
+    type: "info", link: `/vendors/${vendor._id}`,
+    relatedTo: { entity: "Vendor", entityId: vendor._id },
+  });
+
   res.status(201).json({ success: true, message: "Vendor created successfully.", data: vendor });
 });
 
@@ -68,6 +80,12 @@ const update = catchAsync(async (req, res) => {
     runValidators: true,
   });
 
+  await logActivity({
+    action: "Vendor updated", entity: "Vendor", entityId: vendor._id,
+    description: `Vendor ${vendor.companyName} updated`,
+    performedBy: req.user.userId,
+  });
+
   res.json({ success: true, message: "Vendor updated successfully.", data: vendor });
 });
 
@@ -76,6 +94,12 @@ const remove = catchAsync(async (req, res) => {
   if (!vendor) {
     throw new AppError("Vendor not found.", 404);
   }
+
+  await logActivity({
+    action: "Vendor deleted", entity: "Vendor", entityId: vendor._id,
+    description: `Vendor ${vendor.companyName} deleted`,
+    performedBy: req.user.userId,
+  });
 
   res.json({ success: true, message: "Vendor deleted successfully." });
 });

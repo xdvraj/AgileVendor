@@ -2,6 +2,7 @@ const Rfq = require("../models/Rfq");
 const Vendor = require("../models/Vendor");
 const catchAsync = require("../utils/catchAsync");
 const AppError = require("../utils/AppError");
+const { logActivity, notifyAdmins } = require("../utils/logger");
 
 const getAll = catchAsync(async (req, res) => {
   const { search, status, sortBy, order } = req.query;
@@ -63,6 +64,17 @@ const create = catchAsync(async (req, res) => {
 
   const populated = await rfq.populate("assignedVendors", "companyName email phone");
 
+  await logActivity({
+    action: "RFQ created", entity: "RFQ", entityId: rfq._id,
+    description: `RFQ ${rfq.rfqNumber} - ${title} created`,
+    performedBy: req.user.userId,
+  });
+  await notifyAdmins({
+    title: "New RFQ Created", message: `RFQ ${rfq.rfqNumber}: ${title}`,
+    type: "info", link: `/rfqs/${rfq._id}`,
+    relatedTo: { entity: "RFQ", entityId: rfq._id },
+  });
+
   res.status(201).json({ success: true, message: "RFQ created successfully.", data: populated });
 });
 
@@ -89,6 +101,12 @@ const update = catchAsync(async (req, res) => {
     .populate("assignedVendors", "companyName email phone")
     .populate("createdBy", "name email");
 
+  await logActivity({
+    action: "RFQ updated", entity: "RFQ", entityId: rfq._id,
+    description: `RFQ ${rfq.rfqNumber} updated`,
+    performedBy: req.user.userId,
+  });
+
   res.json({ success: true, message: "RFQ updated successfully.", data: updated });
 });
 
@@ -97,6 +115,12 @@ const remove = catchAsync(async (req, res) => {
   if (!rfq) {
     throw new AppError("RFQ not found.", 404);
   }
+
+  await logActivity({
+    action: "RFQ deleted", entity: "RFQ", entityId: rfq._id,
+    description: `RFQ ${rfq.rfqNumber} - ${rfq.title} deleted`,
+    performedBy: req.user.userId,
+  });
 
   res.json({ success: true, message: "RFQ deleted successfully." });
 });
@@ -119,6 +143,15 @@ const assignVendors = catchAsync(async (req, res) => {
   await rfq.save();
 
   const populated = await rfq.populate("assignedVendors", "companyName email phone");
+
+  const assignedVendorsList = await Vendor.find({ _id: { $in: newVendors } }).select("companyName");
+  const vendorNames = assignedVendorsList.map((v) => v.companyName).join(", ");
+
+  await logActivity({
+    action: "Vendors assigned to RFQ", entity: "RFQ", entityId: rfq._id,
+    description: `${vendorNames} assigned to RFQ ${rfq.rfqNumber}`,
+    performedBy: req.user.userId,
+  });
 
   res.json({ success: true, message: "Vendors assigned successfully.", data: populated });
 });

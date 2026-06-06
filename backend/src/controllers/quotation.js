@@ -2,6 +2,7 @@ const Rfq = require("../models/Rfq");
 const Quotation = require("../models/Quotation");
 const catchAsync = require("../utils/catchAsync");
 const AppError = require("../utils/AppError");
+const { logActivity, notifyAdmins } = require("../utils/logger");
 
 const getVendorRfqs = catchAsync(async (req, res) => {
   const rfqs = await Rfq.find({ status: "OPEN" })
@@ -46,6 +47,17 @@ const create = catchAsync(async (req, res) => {
 
   const populated = await quotation.populate("rfq", "rfqNumber title deadline");
 
+  await logActivity({
+    action: "Quotation submitted", entity: "Quotation", entityId: quotation._id,
+    description: `Quotation submitted for RFQ ${rfq.rfqNumber}`,
+    performedBy: req.user.userId, metadata: { totalAmount: quotation.totalAmount },
+  });
+  await notifyAdmins({
+    title: "New Quotation Received", message: `A quotation has been submitted for ${rfq.rfqNumber}`,
+    type: "info", link: `/rfqs/${rfq._id}/compare`,
+    relatedTo: { entity: "Quotation", entityId: quotation._id },
+  });
+
   res.status(201).json({ success: true, message: "Quotation submitted.", data: populated });
 });
 
@@ -69,6 +81,12 @@ const update = catchAsync(async (req, res) => {
     new: true,
     runValidators: true,
   }).populate("rfq", "rfqNumber title deadline");
+
+  await logActivity({
+    action: "Quotation updated", entity: "Quotation", entityId: quotation._id,
+    description: `Quotation updated for RFQ`,
+    performedBy: req.user.userId,
+  });
 
   res.json({ success: true, message: "Quotation updated.", data: updated });
 });

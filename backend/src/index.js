@@ -10,6 +10,8 @@ const quotationRoutes = require("./routes/quotation");
 const approvalRoutes = require("./routes/approval");
 const purchaseOrderRoutes = require("./routes/purchaseOrder");
 const invoiceRoutes = require("./routes/invoice");
+const activityLogRoutes = require("./routes/activityLog");
+const notificationRoutes = require("./routes/notification");
 
 const app = express();
 
@@ -52,6 +54,9 @@ const apiRoutes = [
   { method: "GET",  path: "/api/invoices/:id",                auth: true, description: "Get invoice by ID" },
   { method: "GET",  path: "/api/invoices/:id/download",       auth: true, description: "Download invoice data" },
   { method: "POST", path: "/api/invoices/:id/email",          auth: true, description: "Send invoice to vendor" },
+  { method: "GET",  path: "/api/activity-logs",               auth: true, description: "List activity logs" },
+  { method: "GET",  path: "/api/notifications",               auth: true, description: "List my notifications" },
+  { method: "PATCH",path: "/api/notifications/:id/read",      auth: true, description: "Mark notification as read" },
   { method: "GET",  path: "/api/health",                      auth: false, description: "Server health check" },
 ];
 
@@ -78,6 +83,8 @@ app.use("/api/rfqs", rfqRoutes);
 app.use("/api/approvals", approvalRoutes);
 app.use("/api/purchase-orders", purchaseOrderRoutes);
 app.use("/api/invoices", invoiceRoutes);
+app.use("/api/activity-logs", activityLogRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 app.all("*", (_req, res) => {
   res.status(404).json({ success: false, message: "Route not found." });

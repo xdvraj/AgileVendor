@@ -3,6 +3,7 @@ const { signToken } = require("../utils/jwt");
 const catchAsync = require("../utils/catchAsync");
 const AppError = require("../utils/AppError");
 const env = require("../config/env");
+const { logActivity } = require("../utils/logger");
 
 const cookieOptions = {
   httpOnly: true,
@@ -23,6 +24,14 @@ const signup = catchAsync(async (req, res) => {
   const token = signToken({ userId: user._id, role: user.role });
 
   res.cookie("token", token, cookieOptions);
+
+  await logActivity({
+    action: "User created",
+    entity: "User",
+    entityId: user._id,
+    description: `${user.name} (${user.email}) signed up as ${user.role}`,
+    performedBy: user._id,
+  });
 
   res.status(201).json({
     success: true,

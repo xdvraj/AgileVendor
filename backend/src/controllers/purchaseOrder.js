@@ -4,6 +4,7 @@ const Vendor = require("../models/Vendor");
 const PurchaseOrder = require("../models/PurchaseOrder");
 const catchAsync = require("../utils/catchAsync");
 const AppError = require("../utils/AppError");
+const { logActivity, notifyAdmins } = require("../utils/logger");
 
 const getAll = catchAsync(async (req, res) => {
   const { status, search, sortBy, order } = req.query;
@@ -92,6 +93,17 @@ const create = catchAsync(async (req, res) => {
     .populate("quotation", "totalAmount deliveryTimeline")
     .populate("createdBy", "name email");
 
+  await logActivity({
+    action: "PO generated", entity: "PurchaseOrder", entityId: po._id,
+    description: `PO ${po.poNumber} generated for ${vendorData.companyName}`,
+    performedBy: req.user.userId, metadata: { totalAmount: po.totalAmount },
+  });
+  await notifyAdmins({
+    title: "Purchase Order Generated", message: `PO ${po.poNumber} has been created.`,
+    type: "success", link: `/purchase-orders/${po._id}`,
+    relatedTo: { entity: "PurchaseOrder", entityId: po._id },
+  });
+
   res.status(201).json({ success: true, message: "Purchase order created.", data: populated });
 });
 
@@ -108,6 +120,12 @@ const send = catchAsync(async (req, res) => {
     .populate("rfq", "rfqNumber title")
     .populate("quotation", "totalAmount deliveryTimeline")
     .populate("createdBy", "name email");
+
+  await logActivity({
+    action: "PO sent to vendor", entity: "PurchaseOrder", entityId: po._id,
+    description: `PO ${po.poNumber} sent to ${po.vendor.companyName}`,
+    performedBy: req.user.userId,
+  });
 
   res.json({ success: true, message: "PO sent to vendor.", data: populated });
 });

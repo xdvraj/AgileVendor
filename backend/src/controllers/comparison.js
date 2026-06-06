@@ -1,8 +1,10 @@
 const Rfq = require("../models/Rfq");
 const Quotation = require("../models/Quotation");
 const Vendor = require("../models/Vendor");
+const User = require("../models/User");
 const catchAsync = require("../utils/catchAsync");
 const AppError = require("../utils/AppError");
+const { logActivity, notifyUser } = require("../utils/logger");
 
 const compare = catchAsync(async (req, res) => {
   const { sortBy, order } = req.query;
@@ -98,6 +100,22 @@ const select = catchAsync(async (req, res) => {
   );
 
   await Rfq.findByIdAndUpdate(quotation.rfq, { status: "UNDER_REVIEW" });
+
+  await logActivity({
+    action: "Quotation selected", entity: "Quotation", entityId: quotation._id,
+    description: `Quotation selected for RFQ`,
+    performedBy: req.user.userId, metadata: { totalAmount: quotation.totalAmount },
+  });
+
+  const vendorUser = await User.findById(quotation.createdBy);
+  if (vendorUser) {
+    await notifyUser({
+      userId: vendorUser._id, title: "Quotation Selected",
+      message: "Your quotation has been selected. An approval request will be created.",
+      type: "success", link: `/rfqs/${quotation.rfq}`,
+      relatedTo: { entity: "Quotation", entityId: quotation._id },
+    });
+  }
 
   const populated = await Quotation.findById(quotation._id)
     .populate("createdBy", "name email")

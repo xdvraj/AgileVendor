@@ -5,6 +5,7 @@ const Vendor = require("../models/Vendor");
 const PurchaseOrder = require("../models/PurchaseOrder");
 const catchAsync = require("../utils/catchAsync");
 const AppError = require("../utils/AppError");
+const { logActivity, notifyAdmins } = require("../utils/logger");
 
 const getAll = catchAsync(async (req, res) => {
   const { status } = req.query;
@@ -68,6 +69,12 @@ const create = catchAsync(async (req, res) => {
     .populate("requestedBy", "name email")
     .populate("assignedTo", "name email");
 
+  await logActivity({
+    action: "Approval request created", entity: "Approval", entityId: approval._id,
+    description: `Approval requested for RFQ ${rfq.rfqNumber}`,
+    performedBy: req.user.userId,
+  });
+
   res.status(201).json({ success: true, message: "Approval request created.", data: populated });
 });
 
@@ -122,6 +129,17 @@ const approve = catchAsync(async (req, res) => {
     await Rfq.findByIdAndUpdate(approval.rfq, { status: "PO_CREATED" });
   }
 
+  await logActivity({
+    action: "Approval approved", entity: "Approval", entityId: approval._id,
+    description: `Approval granted. PO auto-generated.`,
+    performedBy: req.user.userId,
+  });
+  await notifyAdmins({
+    title: "Approval Granted", message: "Approval approved and PO has been auto-generated.",
+    type: "success", link: `/purchase-orders`,
+    relatedTo: { entity: "Approval", entityId: approval._id },
+  });
+
   const populated = await approval
     .populate("rfq", "rfqNumber title status")
     .populate("quotation", "totalAmount deliveryTimeline status")
@@ -158,6 +176,12 @@ const reject = catchAsync(async (req, res) => {
     .populate("requestedBy", "name email")
     .populate("assignedTo", "name email")
     .populate("history.by", "name email");
+
+  await logActivity({
+    action: "Approval rejected", entity: "Approval", entityId: approval._id,
+    description: `Approval rejected.`,
+    performedBy: req.user.userId, metadata: { remarks: remarks || null },
+  });
 
   res.json({ success: true, message: "Approval rejected.", data: populated });
 });
