@@ -10,7 +10,19 @@ const quotationRoutes = require("./routes/quotation");
 
 const app = express();
 
-app.use(cors({ origin: env.CLIENT_URL, credentials: true }));
+const corsOrigin =
+  env.NODE_ENV === "development"
+    ? (origin, callback) => {
+        if (!origin || origin === env.CLIENT_URL || /^http:\/\/localhost:\d+$/.test(origin)) {
+          callback(null, true);
+          return;
+        }
+
+        callback(new Error(`Origin ${origin} is not allowed by CORS.`));
+      }
+    : env.CLIENT_URL;
+
+app.use(cors({ origin: corsOrigin, credentials: true }));
 app.use(express.json({ limit: "10kb" }));
 app.use(cookieParser());
 
@@ -75,7 +87,25 @@ app.use((err, _req, res, _next) => {
   });
 });
 
-app.listen(env.PORT, () => {
-  console.log(`Server running → http://localhost:${env.PORT}`);
-  connectDB();
+async function startServer() {
+  await connectDB();
+
+  const server = app.listen(env.PORT, "127.0.0.1", () => {
+    console.log(`Server running → http://localhost:${env.PORT}`);
+  });
+
+  server.on("error", (err) => {
+    if (err.code === "EADDRINUSE") {
+      console.error(`Port ${env.PORT} is already in use. Stop the other process or change PORT in backend/.env.`);
+    } else {
+      console.error(`Failed to start server: ${err.message}`);
+    }
+
+    process.exit(1);
+  });
+}
+
+startServer().catch((err) => {
+  console.error(`Failed to start server: ${err.message}`);
+  process.exit(1);
 });
