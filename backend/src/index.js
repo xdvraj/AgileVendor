@@ -12,6 +12,7 @@ const purchaseOrderRoutes = require("./routes/purchaseOrder");
 const invoiceRoutes = require("./routes/invoice");
 const activityLogRoutes = require("./routes/activityLog");
 const notificationRoutes = require("./routes/notification");
+const reportRoutes = require("./routes/report");
 
 const app = express();
 
@@ -57,6 +58,11 @@ const apiRoutes = [
   { method: "GET",  path: "/api/activity-logs",               auth: true, description: "List activity logs" },
   { method: "GET",  path: "/api/notifications",               auth: true, description: "List my notifications" },
   { method: "PATCH",path: "/api/notifications/:id/read",      auth: true, description: "Mark notification as read" },
+  { method: "GET",  path: "/api/reports/vendor-performance",  auth: true, description: "Vendor performance report" },
+  { method: "GET",  path: "/api/reports/monthly-spending",    auth: true, description: "Monthly procurement spending" },
+  { method: "GET",  path: "/api/reports/rfq-status",          auth: true, description: "RFQ status distribution" },
+  { method: "GET",  path: "/api/reports/purchase-orders",     auth: true, description: "PO summary report" },
+  { method: "GET",  path: "/api/reports/invoices",            auth: true, description: "Invoice summary report" },
   { method: "GET",  path: "/api/health",                      auth: false, description: "Server health check" },
 ];
 
@@ -85,6 +91,7 @@ app.use("/api/purchase-orders", purchaseOrderRoutes);
 app.use("/api/invoices", invoiceRoutes);
 app.use("/api/activity-logs", activityLogRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/reports", reportRoutes);
 
 app.all("*", (_req, res) => {
   res.status(404).json({ success: false, message: "Route not found." });
